@@ -11,6 +11,7 @@ import com.facebook.react.bridge.Arguments;
 import com.facebook.react.bridge.WritableArray;
 import com.facebook.react.bridge.WritableMap;
 
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -48,6 +49,55 @@ public class ContactsProvider {
 
     public ContactsProvider(ContentResolver contentResolver) {
         this.contentResolver = contentResolver;
+    }
+
+    public WritableMap getContactFromUri(Uri uri) {
+        // Get the identifier
+        Cursor cursor = contentResolver.query(
+                uri,
+                null,
+                null,
+                null,
+                null
+        );
+
+        String id = null;
+        if (cursor.moveToFirst()) {
+          int idx = cursor.getColumnIndex(ContactsContract.Contacts._ID);
+          id = cursor.getString(idx);
+        } else {
+          // No contact
+          return null;
+        }
+
+        // Build the entity URI
+        Uri.Builder b = Uri.withAppendedPath(ContactsContract.Contacts.CONTENT_URI, id).buildUpon();
+        b.appendPath(ContactsContract.Contacts.Entity.CONTENT_DIRECTORY);
+        Uri contactUri = b.build();
+
+        // Get all the data
+        cursor = contentResolver.query(
+                contactUri,
+                FULL_PROJECTION.toArray(new String[FULL_PROJECTION.size()]),
+                ContactsContract.Data.MIMETYPE + "=? OR " + ContactsContract.Data.MIMETYPE + "=? OR " + ContactsContract.Data.MIMETYPE + "=?",
+                new String[]{Email.CONTENT_ITEM_TYPE, Phone.CONTENT_ITEM_TYPE, StructuredName.CONTENT_ITEM_TYPE},
+                null
+        );
+
+        Map<String, Contact> one;
+        try {
+            one = loadContactsFrom(cursor);
+        } finally {
+            if (cursor != null) {
+                cursor.close();
+            }
+        }
+
+        if (one.size() == 0) {
+            return null;
+        }
+
+        return one.values().iterator().next().toMap();
     }
 
     public WritableArray getContacts() {

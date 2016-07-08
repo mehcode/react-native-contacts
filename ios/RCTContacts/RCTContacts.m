@@ -4,6 +4,9 @@
 
 @implementation RCTContacts
 
+static RCTPromiseResolveBlock _resolveOpenAddressBookForAdd;
+static RCTPromiseRejectBlock _rejectOpenAddressBookForAdd;
+
 RCT_EXPORT_MODULE();
 
 - (NSDictionary *)constantsToExport
@@ -36,6 +39,42 @@ RCT_EXPORT_METHOD(requestPermission:(RCTResponseSenderBlock) callback)
     }
     [self checkPermission:callback];
   });
+}
+
+RCT_REMAP_METHOD(openAddressBookForAdd,
+                 resolver:(RCTPromiseResolveBlock)resolve
+                 rejecter:(RCTPromiseRejectBlock)reject)
+{
+  _resolveOpenAddressBookForAdd = resolve;
+  _rejectOpenAddressBookForAdd = reject;
+
+  UIViewController *picker;
+
+  picker = [[ABPeoplePickerNavigationController alloc] init];
+  [((ABPeoplePickerNavigationController *)picker) setPeoplePickerDelegate:self];
+
+  //Launch Contact Picker or Address Book View Controller
+  UIViewController *root = [[[UIApplication sharedApplication] delegate] window].rootViewController;
+  [root presentViewController:picker animated:YES completion:nil];
+}
+
+- (void)newPersonViewController:(ABNewPersonViewController*)newPersonViewController didCompleteWithNewPerson:(ABRecordRef)person
+{
+  if (person) {
+    CFErrorRef error = NULL;
+    ABAddressBookRef addressBook = ABAddressBookCreate();
+    ABAddressBookAddRecord(addressBook, person, &error);
+    ABAddressBookSave(addressBook, &error);
+    CFRelease(addressBook);
+
+    if (error != NULL) {
+      NSLog(@"Error saving contact");
+    }
+
+    _resolve([self dictionaryRepresentationForABPerson: person]);
+  }
+
+  [newPersonViewController dismissViewControllerAnimated:YES completion:nil];
 }
 
 RCT_EXPORT_METHOD(getAll:(RCTResponseSenderBlock) callback)
@@ -182,7 +221,7 @@ withCallback:(RCTResponseSenderBlock) callback
     tempfilePath = [[NSFileManager defaultManager]
     stringWithFileSystemRepresentation:template
     length:strlen(template)];
-    
+
     tempfilePath = [tempfilePath stringByAppendingString:@".png"];
 
     [data writeToFile:tempfilePath options:NSAtomicWrite error:&err];

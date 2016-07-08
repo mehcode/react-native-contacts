@@ -1,5 +1,8 @@
 #import "RCTBridgeModule.h"
 
-@interface RCTContacts : NSObject <RCTBridgeModule>
+@import AddressBook;
+@import AddressBookUI;
+
+@interface RCTContacts : NSObject <RCTBridgeModule, ABPeoplePickerNavigationControllerDelegate>
 
 @end

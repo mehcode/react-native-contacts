@@ -1,17 +1,22 @@
 package com.rt2zz.reactnativecontacts;
 
+import android.app.Activity;
 import android.content.ContentProviderOperation;
 import android.content.ContentResolver;
 import android.content.Context;
+import android.content.Intent;
 import android.database.Cursor;
 import android.provider.ContactsContract;
 import android.provider.ContactsContract.RawContacts;
 import android.provider.ContactsContract.CommonDataKinds;
 import android.provider.ContactsContract.CommonDataKinds.StructuredName;
 import android.net.Uri;
+import android.util.SparseArray;
 
+import com.facebook.react.bridge.ActivityEventListener;
 import com.facebook.react.bridge.Arguments;
 import com.facebook.react.bridge.Callback;
+import com.facebook.react.bridge.Promise;
 import com.facebook.react.bridge.ReactApplicationContext;
 import com.facebook.react.bridge.ReactContextBaseJavaModule;
 import com.facebook.react.bridge.ReactMethod;
@@ -22,10 +27,60 @@ import com.facebook.react.bridge.WritableMap;
 
 import java.util.ArrayList;
 
-public class ContactsManager extends ReactContextBaseJavaModule {
+public class ContactsManager extends ReactContextBaseJavaModule implements ActivityEventListener {
+  // Request promises
+  private final SparseArray<Promise> mPromises = new SparseArray<>();
+
+  // Request codes to use for dialogs
+  private static final int REQ_CONTACT_ADD = 15000 + 1;
 
   public ContactsManager(ReactApplicationContext reactContext) {
     super(reactContext);
+
+    // Register onActivityResult
+    reactContext.addActivityEventListener(this);
+  }
+
+  @Override
+  public void onActivityResult(int requestCode, int resultCode, Intent data) {
+    if (requestCode == REQ_CONTACT_ADD) {
+      final Promise promise = mPromises.get(requestCode);
+      if (promise == null) {
+        // Somehow we got here without a registered promise
+        return;
+      }
+
+      if (resultCode == Activity.RESULT_OK) {
+        ContentResolver cr = getReactApplicationContext().getContentResolver();
+        ContactsProvider contactsProvider = new ContactsProvider(cr);
+        WritableMap contact = contactsProvider.getContactFromUri(data.getData());
+
+        promise.resolve(contact);
+      } else {
+        promise.reject("Cancelled; no contact created.");
+      }
+
+      mPromises.remove(requestCode);
+    }
+  }
+
+  /*
+   * Opens the native "add contact" UI.
+   */
+  @ReactMethod
+  public void openAddressBookForAdd(Promise promise) {
+    mPromises.put(REQ_CONTACT_ADD, promise);
+
+    final Intent intent = new Intent(
+            Intent.ACTION_INSERT,
+            ContactsContract.Contacts.CONTENT_URI
+    );
+
+    intent.setType(ContactsContract.Contacts.CONTENT_TYPE);
+    intent.putExtra("finishActivityOnSaveCompleted", true);
+
+    getReactApplicationContext().startActivityForResult(
+            intent, REQ_CONTACT_ADD, null);
   }
 
   /*
@@ -34,12 +89,12 @@ public class ContactsManager extends ReactContextBaseJavaModule {
    */
   @ReactMethod
   public void getAll(Callback callback) {
-      ContentResolver cr = getReactApplicationContext().getContentResolver();
+    ContentResolver cr = getReactApplicationContext().getContentResolver();
 
-      ContactsProvider contactsProvider = new ContactsProvider(cr);
-      WritableArray contacts = contactsProvider.getContacts();
+    ContactsProvider contactsProvider = new ContactsProvider(cr);
+    WritableArray contacts = contactsProvider.getContacts();
 
-      callback.invoke(null, contacts);
+    callback.invoke(null, contacts);
   }
 
   /*
@@ -89,17 +144,17 @@ public class ContactsManager extends ReactContextBaseJavaModule {
     ArrayList<ContentProviderOperation> ops = new ArrayList<ContentProviderOperation>();
 
     ContentProviderOperation.Builder op = ContentProviderOperation.newInsert(RawContacts.CONTENT_URI)
-      .withValue(RawContacts.ACCOUNT_TYPE, null)
-      .withValue(RawContacts.ACCOUNT_NAME, null);
+            .withValue(RawContacts.ACCOUNT_TYPE, null)
+            .withValue(RawContacts.ACCOUNT_NAME, null);
     ops.add(op.build());
 
     op = ContentProviderOperation.newInsert(ContactsContract.Data.CONTENT_URI)
-      .withValueBackReference(ContactsContract.Data.RAW_CONTACT_ID, 0)
-      .withValue(ContactsContract.Data.MIMETYPE, StructuredName.CONTENT_ITEM_TYPE)
-      // .withValue(StructuredName.DISPLAY_NAME, name)
-      .withValue(StructuredName.GIVEN_NAME, givenName)
-      .withValue(StructuredName.MIDDLE_NAME, middleName)
-      .withValue(StructuredName.FAMILY_NAME, familyName);
+            .withValueBackReference(ContactsContract.Data.RAW_CONTACT_ID, 0)
+            .withValue(ContactsContract.Data.MIMETYPE, StructuredName.CONTENT_ITEM_TYPE)
+            // .withValue(StructuredName.DISPLAY_NAME, name)
+            .withValue(StructuredName.GIVEN_NAME, givenName)
+            .withValue(StructuredName.MIDDLE_NAME, middleName)
+            .withValue(StructuredName.FAMILY_NAME, familyName);
     ops.add(op.build());
 
     //TODO not sure where to allow yields
@@ -107,19 +162,19 @@ public class ContactsManager extends ReactContextBaseJavaModule {
 
     for (int i=0; i < numOfPhones; i++) {
       op = ContentProviderOperation.newInsert(ContactsContract.Data.CONTENT_URI)
-        .withValueBackReference(ContactsContract.Data.RAW_CONTACT_ID, 0)
-        .withValue(ContactsContract.Data.MIMETYPE, CommonDataKinds.Phone.CONTENT_ITEM_TYPE)
-        .withValue(CommonDataKinds.Phone.NUMBER, phones[i])
-        .withValue(CommonDataKinds.Phone.TYPE, phonesLabels[i]);
+              .withValueBackReference(ContactsContract.Data.RAW_CONTACT_ID, 0)
+              .withValue(ContactsContract.Data.MIMETYPE, CommonDataKinds.Phone.CONTENT_ITEM_TYPE)
+              .withValue(CommonDataKinds.Phone.NUMBER, phones[i])
+              .withValue(CommonDataKinds.Phone.TYPE, phonesLabels[i]);
       ops.add(op.build());
     }
 
     for (int i=0; i < numOfEmails; i++) {
       op = ContentProviderOperation.newInsert(ContactsContract.Data.CONTENT_URI)
-        .withValueBackReference(ContactsContract.Data.RAW_CONTACT_ID, 0)
-        .withValue(ContactsContract.Data.MIMETYPE, CommonDataKinds.Email.CONTENT_ITEM_TYPE)
-        .withValue(CommonDataKinds.Email.ADDRESS, emails[i])
-        .withValue(CommonDataKinds.Email.TYPE, emailsLabels[i]);
+              .withValueBackReference(ContactsContract.Data.RAW_CONTACT_ID, 0)
+              .withValue(ContactsContract.Data.MIMETYPE, CommonDataKinds.Email.CONTENT_ITEM_TYPE)
+              .withValue(CommonDataKinds.Email.ADDRESS, emails[i])
+              .withValue(CommonDataKinds.Email.TYPE, emailsLabels[i]);
       ops.add(op.build());
     }
 
