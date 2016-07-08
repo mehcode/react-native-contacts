@@ -79,7 +79,7 @@ public class ContactsManager extends ReactContextBaseJavaModule implements Activ
     intent.setType(ContactsContract.Contacts.CONTENT_TYPE);
     intent.putExtra("finishActivityOnSaveCompleted", true);
 
-    getReactApplicationContext().startActivityForResult(
+    getCurrentActivity().startActivityForResult(
             intent, REQ_CONTACT_ADD, null);
   }
 
