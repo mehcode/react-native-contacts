@@ -50,12 +50,14 @@ RCT_REMAP_METHOD(openAddressBookForAdd,
 
   UIViewController *picker;
 
-  picker = [[ABPeoplePickerNavigationController alloc] init];
-  [((ABPeoplePickerNavigationController *)picker) setPeoplePickerDelegate:self];
+  picker = [[ABNewPersonViewController alloc] init];
+  [((ABNewPersonViewController*)picker) setNewPersonViewDelegate:self];
+    
+  UINavigationController *navController = [[UINavigationController alloc] initWithRootViewController:picker];
 
   //Launch Contact Picker or Address Book View Controller
   UIViewController *root = [[[UIApplication sharedApplication] delegate] window].rootViewController;
-  [root presentViewController:picker animated:YES completion:nil];
+  [root presentViewController:navController animated:YES completion:nil];
 }
 
 - (void)newPersonViewController:(ABNewPersonViewController*)newPersonViewController didCompleteWithNewPerson:(ABRecordRef)person
@@ -65,13 +67,13 @@ RCT_REMAP_METHOD(openAddressBookForAdd,
     ABAddressBookRef addressBook = ABAddressBookCreate();
     ABAddressBookAddRecord(addressBook, person, &error);
     ABAddressBookSave(addressBook, &error);
-    CFRelease(addressBook);
 
     if (error != NULL) {
       NSLog(@"Error saving contact");
     }
 
-    _resolve([self dictionaryRepresentationForABPerson: person]);
+    _resolveOpenAddressBookForAdd([self dictionaryRepresentationForABPerson: person]);
+    CFRelease(addressBook);
   }
 
   [newPersonViewController dismissViewControllerAnimated:YES completion:nil];
