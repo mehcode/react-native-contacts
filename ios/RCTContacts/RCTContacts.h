@@ -3,6 +3,6 @@
 @import AddressBook;
 @import AddressBookUI;
 
-@interface RCTContacts : NSObject <RCTBridgeModule, ABPeoplePickerNavigationControllerDelegate>
+@interface RCTContacts : NSObject <RCTBridgeModule>
 
 @end
