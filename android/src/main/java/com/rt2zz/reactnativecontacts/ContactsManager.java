@@ -43,7 +43,7 @@ public class ContactsManager extends ReactContextBaseJavaModule implements Activ
   }
 
   @Override
-  public void onActivityResult(int requestCode, int resultCode, Intent data) {
+  public void onActivityResult(Activity activity, int requestCode, int resultCode, Intent data) {
     if (requestCode == REQ_CONTACT_ADD) {
       final Promise promise = mPromises.get(requestCode);
       if (promise == null) {
@@ -63,6 +63,11 @@ public class ContactsManager extends ReactContextBaseJavaModule implements Activ
 
       mPromises.remove(requestCode);
     }
+  }
+
+  @Override
+  public void onNewIntent(Intent intent) {
+    // Do nothing
   }
 
   /*
