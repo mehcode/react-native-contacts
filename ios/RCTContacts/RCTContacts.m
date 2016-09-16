@@ -52,7 +52,7 @@ RCT_REMAP_METHOD(openAddressBookForAdd,
 
   picker = [[ABNewPersonViewController alloc] init];
   [((ABNewPersonViewController*)picker) setNewPersonViewDelegate:self];
-    
+
   UINavigationController *navController = [[UINavigationController alloc] initWithRootViewController:picker];
 
   //Launch Contact Picker or Address Book View Controller
@@ -200,7 +200,9 @@ withCallback:(RCTResponseSenderBlock) callback
 
   [contact setObject: emailAddreses forKey:@"emailAddresses"];
 
-  [contact setObject: [self getABPersonThumbnailFilepath:person] forKey:@"thumbnailPath"];
+  /*
+    [contact setObject: [self getABPersonThumbnailFilepath:person] forKey:@"thumbnailPath"];
+  */
 
   return contact;
 }
