@@ -194,10 +194,10 @@ public class ContactsProvider {
                 contact.displayName = name;
             }
 
-            String rawPhotoURI = cursor.getString(cursor.getColumnIndex(Contactables.PHOTO_URI));
-            if (!TextUtils.isEmpty(rawPhotoURI)) {
-                contact.photoUri = getPhotoURIFromContactURI(rawPhotoURI, contactId);
-            }
+            // String rawPhotoURI = cursor.getString(cursor.getColumnIndex(Contactables.PHOTO_URI));
+            // if (!TextUtils.isEmpty(rawPhotoURI)) {
+            //     contact.photoUri = getPhotoURIFromContactURI(rawPhotoURI, contactId);
+            // }
 
             if (mimeType.equals(StructuredName.CONTENT_ITEM_TYPE)) {
                 contact.givenName = cursor.getString(cursor.getColumnIndex(StructuredName.GIVEN_NAME));
@@ -262,7 +262,7 @@ public class ContactsProvider {
       String photoURI = "";
       try {
         Uri contactURI = Uri.parse(contactURIString);
-        InputStream photoStream = contentResolver.openInputStream(contactURI);            
+        InputStream photoStream = contentResolver.openInputStream(contactURI);
         BufferedInputStream in = new BufferedInputStream(photoStream);
         File outputDir = context.getCacheDir(); // context being the Activity pointer
         File outputFile = File.createTempFile("contact" + contactId, ".jpg", outputDir);
