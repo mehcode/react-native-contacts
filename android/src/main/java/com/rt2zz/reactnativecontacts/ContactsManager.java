@@ -53,7 +53,7 @@ public class ContactsManager extends ReactContextBaseJavaModule implements Activ
 
       if (resultCode == Activity.RESULT_OK) {
         ContentResolver cr = getReactApplicationContext().getContentResolver();
-        ContactsProvider contactsProvider = new ContactsProvider(cr);
+        ContactsProvider contactsProvider = new ContactsProvider(cr, getReactApplicationContext());
         WritableMap contact = contactsProvider.getContactFromUri(data.getData());
 
         promise.resolve(contact);
