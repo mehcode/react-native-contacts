@@ -48,16 +48,18 @@ RCT_REMAP_METHOD(openAddressBookForAdd,
   _resolveOpenAddressBookForAdd = resolve;
   _rejectOpenAddressBookForAdd = reject;
 
-  UIViewController *picker;
+  dispatch_async(dispatch_get_main_queue(), ^{
+    UIViewController *picker;
 
-  picker = [[ABNewPersonViewController alloc] init];
-  [((ABNewPersonViewController*)picker) setNewPersonViewDelegate:self];
+    picker = [[ABNewPersonViewController alloc] init];
+    [((ABNewPersonViewController*)picker) setNewPersonViewDelegate:self];
 
-  UINavigationController *navController = [[UINavigationController alloc] initWithRootViewController:picker];
+    UINavigationController *navController = [[UINavigationController alloc] initWithRootViewController:picker];
 
-  //Launch Contact Picker or Address Book View Controller
-  UIViewController *root = [[[UIApplication sharedApplication] delegate] window].rootViewController;
-  [root presentViewController:navController animated:YES completion:nil];
+    //Launch Contact Picker or Address Book View Controller
+    UIViewController *root = [[[UIApplication sharedApplication] delegate] window].rootViewController;
+    [root presentViewController:navController animated:YES completion:nil];
+  });
 }
 
 - (void)newPersonViewController:(ABNewPersonViewController*)newPersonViewController didCompleteWithNewPerson:(ABRecordRef)person
