@@ -163,7 +163,7 @@ public class ContactsProvider {
 
         Map<String, Contact> map = new LinkedHashMap<>();
 
-        while (cursor.moveToNext()) {
+        while (cursor != null && cursor.moveToNext()) {
 
             int columnIndex = cursor.getColumnIndex(ContactsContract.Data.CONTACT_ID);
             String contactId;
